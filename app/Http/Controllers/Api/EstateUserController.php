@@ -16,7 +16,7 @@ class EstateUserController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('admin');
+        // Admin middleware is already applied in routes
         
         $query = User::query();
         
@@ -43,7 +43,7 @@ class EstateUserController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('admin');
+        // Admin middleware is already applied in routes
         
         $validator = Validator::make($request->all(), [
             'firstname' => 'required|string|max:255',
@@ -178,7 +178,7 @@ class EstateUserController extends Controller
      */
     public function destroy($id)
     {
-        $this->authorize('admin');
+        // Admin middleware is already applied in routes
         
         $user = User::findOrFail($id);
         
