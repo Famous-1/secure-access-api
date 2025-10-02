@@ -21,12 +21,16 @@ class VisitorCode extends Model
         'additional_notes',
         'verified_by',
         'verified_at',
-        'status'
+        'status',
+        'time_in',
+        'time_out'
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'verified_at' => 'datetime',
+        'time_in' => 'datetime',
+        'time_out' => 'datetime',
     ];
 
     public function user()

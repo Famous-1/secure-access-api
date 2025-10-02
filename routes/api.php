@@ -57,6 +57,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/verify', [VisitorCodeController::class, 'verify']);
         Route::post('/{id}/cancel', [VisitorCodeController::class, 'cancel']);
         Route::post('/verify-by-code', [VisitorCodeController::class, 'verifyByCode']);
+        
+        // Admin/Maintainer only routes for time management
+        Route::middleware('admin')->group(function () {
+            Route::post('/{id}/time-in', [VisitorCodeController::class, 'setTimeIn']);
+            Route::post('/{id}/time-out', [VisitorCodeController::class, 'setTimeOut']);
+        });
     });
 
     // Complaint Routes

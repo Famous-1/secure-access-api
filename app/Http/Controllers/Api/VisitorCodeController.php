@@ -67,7 +67,7 @@ class VisitorCodeController extends Controller
             'code' => $code,
             'expires_at' => $request->expires_at,
             'additional_notes' => $request->additional_notes,
-            'status' => 'active'
+            'status' => 'pending'
         ]);
 
         // Log activity
@@ -136,14 +136,15 @@ class VisitorCodeController extends Controller
         $visitorCode->update([
             'verified_by' => auth()->id(),
             'verified_at' => now(),
-            'status' => 'used'
+            'status' => 'active',
+            'time_in' => now()
         ]);
 
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
             'action' => 'visitor_code_verified',
-            'description' => "Verified visitor code for {$visitorCode->visitor_name}",
+            'description' => "Verified visitor code for {$visitorCode->visitor_name} (Time In)",
             'related_type' => 'App\Models\VisitorCode',
             'related_id' => $visitorCode->id,
             'metadata' => [
@@ -279,14 +280,15 @@ class VisitorCodeController extends Controller
         $visitorCode->update([
             'verified_by' => auth()->id(),
             'verified_at' => now(),
-            'status' => 'used'
+            'status' => 'active',
+            'time_in' => now()
         ]);
 
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
             'action' => 'visitor_code_verified_by_code',
-            'description' => "Verified visitor code: {$visitorCode->code} for {$visitorCode->visitor_name}",
+            'description' => "Verified visitor code: {$visitorCode->code} for {$visitorCode->visitor_name} (Time In)",
             'related_type' => 'App\Models\VisitorCode',
             'related_id' => $visitorCode->id,
             'metadata' => [
@@ -300,6 +302,102 @@ class VisitorCodeController extends Controller
             'success' => true,
             'message' => 'Visitor code verified successfully',
             'data' => $visitorCode->load(['user', 'verifiedBy'])
+        ]);
+    }
+
+    /**
+     * Set time out for visitor code (Admin/Maintainer only)
+     */
+    public function setTimeOut(Request $request, $id)
+    {
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins and maintainers can set time out.'
+            ], 403);
+        }
+
+        $visitorCode = VisitorCode::findOrFail($id);
+        
+        if ($visitorCode->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Visitor code must be active to set time out'
+            ], 400);
+        }
+
+        $visitorCode->update([
+            'time_out' => now(),
+            'status' => 'complete'
+        ]);
+
+        // Log activity
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'visitor_code_time_out',
+            'description' => "Set time out for visitor code: {$visitorCode->code} for {$visitorCode->visitor_name}",
+            'related_type' => 'App\Models\VisitorCode',
+            'related_id' => $visitorCode->id,
+            'metadata' => [
+                'visitor_name' => $visitorCode->visitor_name,
+                'destination' => $visitorCode->destination,
+                'code' => $visitorCode->code,
+                'time_out' => now()->toISOString()
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Time out set successfully',
+            'data' => $visitorCode
+        ]);
+    }
+
+    /**
+     * Set time in for visitor code (Admin/Maintainer only)
+     */
+    public function setTimeIn(Request $request, $id)
+    {
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins and maintainers can set time in.'
+            ], 403);
+        }
+
+        $visitorCode = VisitorCode::findOrFail($id);
+        
+        if ($visitorCode->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Visitor code must be pending to set time in'
+            ], 400);
+        }
+
+        $visitorCode->update([
+            'time_in' => now(),
+            'status' => 'active'
+        ]);
+
+        // Log activity
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'visitor_code_time_in',
+            'description' => "Set time in for visitor code: {$visitorCode->code} for {$visitorCode->visitor_name}",
+            'related_type' => 'App\Models\VisitorCode',
+            'related_id' => $visitorCode->id,
+            'metadata' => [
+                'visitor_name' => $visitorCode->visitor_name,
+                'destination' => $visitorCode->destination,
+                'code' => $visitorCode->code,
+                'time_in' => now()->toISOString()
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Time in set successfully',
+            'data' => $visitorCode
         ]);
     }
 }
