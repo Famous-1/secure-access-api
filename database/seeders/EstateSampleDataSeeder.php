@@ -27,7 +27,7 @@ class EstateSampleDataSeeder extends Seeder
                 'phone' => '1111111111',
                 'apartment_unit' => 'Apt 101, Block A',
                 'full_address' => '123 Main Street, City, State 12345',
-                'usertype' => 'user',
+                'usertype' => 'resident',
                 'status' => 'active'
             ],
             [
@@ -37,7 +37,7 @@ class EstateSampleDataSeeder extends Seeder
                 'phone' => '1111111112',
                 'apartment_unit' => 'Apt 205, Block B',
                 'full_address' => '456 Oak Avenue, City, State 12345',
-                'usertype' => 'user',
+                'usertype' => 'resident',
                 'status' => 'active'
             ],
             [
@@ -47,7 +47,7 @@ class EstateSampleDataSeeder extends Seeder
                 'phone' => '1111111113',
                 'apartment_unit' => 'Apt 302, Block C',
                 'full_address' => '789 Pine Road, City, State 12345',
-                'usertype' => 'user',
+                'usertype' => 'resident',
                 'status' => 'active'
             ]
         ];
@@ -70,7 +70,7 @@ class EstateSampleDataSeeder extends Seeder
             'phone' => '1111111114',
             'apartment_unit' => 'Maintenance Office',
             'full_address' => 'Maintenance Building, Estate Complex',
-            'usertype' => 'user',
+            'usertype' => 'maintainer',
             'status' => 'active',
             'password' => Hash::make('password123'),
             'email_verified_at' => now()
@@ -98,7 +98,7 @@ class EstateSampleDataSeeder extends Seeder
                 'code' => 'DEF456',
                 'expires_at' => now()->addHours(2),
                 'additional_notes' => 'Delivery person',
-                'status' => 'used',
+                'status' => 'complete',
                 'verified_by' => $maintainer->id,
                 'verified_at' => now()->subHour()
             ]
