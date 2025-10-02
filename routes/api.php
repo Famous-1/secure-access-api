@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('users', EstateUserController::class);
         Route::get('/visitor-codes', [VisitorCodeController::class, 'adminIndex']);
         Route::get('/complaints', [ComplaintController::class, 'adminIndex']);
+        Route::get('/complaints/{id}', [ComplaintController::class, 'adminShow']);
         Route::get('/complaints/statistics', [ComplaintController::class, 'statistics']);
         Route::get('/activities', [ActivityController::class, 'adminIndex']);
         Route::get('/activities/statistics', [ActivityController::class, 'statistics']);

@@ -282,4 +282,24 @@ class ComplaintController extends Controller
             'data' => $categories
         ]);
     }
+
+    /**
+     * Get a specific complaint (Admin only)
+     */
+    public function adminShow($id)
+    {
+        if (auth()->user()->usertype !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+
+        $complaint = Complaint::with(['user', 'resolvedBy'])->findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $complaint
+        ]);
+    }
 }
