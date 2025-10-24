@@ -19,7 +19,7 @@ return new class extends Migration
             $table->enum('severity', ['low', 'medium', 'high', 'critical']);
             $table->string('title');
             $table->text('description');
-            $table->enum('status', ['pending', 'in_progress', 'resolved', 'closed'])->default('pending');
+            $table->enum('status', ['pending', 'acknowledged', 'in_progress', 'resolved', 'closed'])->default('pending');
             $table->text('admin_notes')->nullable();
             $table->timestamp('resolved_at')->nullable();
             $table->foreignId('resolved_by')->nullable()->constrained('users')->onDelete('set null');

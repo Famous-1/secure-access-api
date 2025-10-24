@@ -262,6 +262,10 @@ class VisitorCodeController extends Controller
         }
 
         if ($visitorCode->isExpired()) {
+            // Mark as expired if not already
+            if ($visitorCode->status !== 'expired') {
+                $visitorCode->update(['status' => 'expired']);
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'Visitor code has expired',
@@ -271,10 +275,10 @@ class VisitorCodeController extends Controller
 
         if ($visitorCode->isVerified()) {
             return response()->json([
-                'success' => false,
+                'success' => true,
                 'message' => 'Visitor code has already been verified',
-                'data' => $visitorCode
-            ], 400);
+                'data' => $visitorCode->load(['user', 'verifiedBy'])
+            ], 200);
         }
 
         $visitorCode->update([

@@ -37,6 +37,11 @@ class Complaint extends Model
         return $this->belongsTo(User::class, 'resolved_by');
     }
 
+    public function replies()
+    {
+        return $this->hasMany(ComplaintReply::class);
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');

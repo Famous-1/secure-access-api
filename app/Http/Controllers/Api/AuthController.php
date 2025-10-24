@@ -331,5 +331,41 @@ public function deleteUser(Request $request)
     }
 }
 
+/**
+ * Set password using token (for admin-created accounts)
+ */
+public function setPassword(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'token' => 'required|string',
+        'password' => 'required|string|min:6|confirmed',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 400);
+    }
+
+    $user = User::where('email', $request->email)
+        ->where('password_setup_token', $request->token)
+        ->first();
+
+    if (!$user) {
+        return response()->json(['message' => 'Invalid token or email.'], 400);
+    }
+
+    if (now()->greaterThan($user->password_setup_token_expires_at)) {
+        return response()->json(['message' => 'Password setup token has expired.'], 400);
+    }
+
+    $user->update([
+        'password' => Hash::make($request->password),
+        'password_setup_token' => null,
+        'password_setup_token_expires_at' => null,
+    ]);
+
+    return response()->json(['message' => 'Password set successfully. You can now login.']);
+}
+
 
 }

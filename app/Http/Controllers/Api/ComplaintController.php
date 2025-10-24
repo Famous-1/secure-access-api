@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use App\Models\ComplaintReply;
 use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -103,7 +104,9 @@ class ComplaintController extends Controller
      */
     public function show($id)
     {
-        $complaint = Complaint::where('user_id', auth()->id())->findOrFail($id);
+        $complaint = Complaint::with(['replies.user'])
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
         
         return response()->json([
             'success' => true,
@@ -125,7 +128,7 @@ class ComplaintController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'sometimes|in:pending,in_progress,resolved,closed',
+            'status' => 'sometimes|in:pending,acknowledged,in_progress,resolved,closed',
             'admin_notes' => 'sometimes|string|max:1000'
         ]);
 
@@ -235,6 +238,7 @@ class ComplaintController extends Controller
         $stats = [
             'total' => Complaint::count(),
             'pending' => Complaint::where('status', 'pending')->count(),
+            'acknowledged' => Complaint::where('status', 'acknowledged')->count(),
             'in_progress' => Complaint::where('status', 'in_progress')->count(),
             'resolved' => Complaint::where('status', 'resolved')->count(),
             'closed' => Complaint::where('status', 'closed')->count(),
@@ -295,11 +299,67 @@ class ComplaintController extends Controller
             ], 403);
         }
 
-        $complaint = Complaint::with(['user', 'resolvedBy'])->findOrFail($id);
+        $complaint = Complaint::with(['user', 'resolvedBy', 'replies.user'])->findOrFail($id);
         
         return response()->json([
             'success' => true,
             'data' => $complaint
         ]);
+    }
+
+    /**
+     * Reply to a complaint (Admin only)
+     */
+    public function reply(Request $request, $id)
+    {
+        if (auth()->user()->usertype !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins can reply to complaints.'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'message' => 'required|string|max:2000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $complaint = Complaint::findOrFail($id);
+
+        $reply = ComplaintReply::create([
+            'complaint_id' => $complaint->id,
+            'user_id' => auth()->id(),
+            'message' => $request->message
+        ]);
+
+        // Update complaint status to in_progress if it's pending
+        if ($complaint->status === 'pending') {
+            $complaint->update(['status' => 'in_progress']);
+        }
+
+        // Log activity
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'complaint_replied',
+            'description' => "Replied to complaint: {$complaint->title}",
+            'related_type' => 'App\Models\Complaint',
+            'related_id' => $complaint->id,
+            'metadata' => [
+                'reply' => $request->message
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reply added successfully',
+            'data' => $reply->load('user')
+        ], 201);
     }
 }

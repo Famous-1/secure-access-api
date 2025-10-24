@@ -8,6 +8,8 @@ use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use App\Notifications\SetPasswordNotification;
 
 class EstateUserController extends Controller
 {
@@ -64,6 +66,9 @@ class EstateUserController extends Controller
             ], 422);
         }
 
+        // Generate password setup token
+        $passwordSetupToken = (string) Str::uuid();
+
         $user = User::create([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,
@@ -73,9 +78,14 @@ class EstateUserController extends Controller
             'full_address' => $request->full_address,
             'usertype' => $request->usertype,
             'status' => $request->status,
-            'password' => Hash::make('password123'), // Default password
-            'email_verified_at' => now()
+            'password' => Hash::make(Str::random(32)), // Random temporary password
+            'email_verified_at' => now(), // Auto-verify admin created accounts
+            'password_setup_token' => $passwordSetupToken,
+            'password_setup_token_expires_at' => now()->addHours(24)
         ]);
+
+        // Send password setup email
+        $user->notify(new SetPasswordNotification($user, $passwordSetupToken));
 
         // Log activity
         Activity::create([

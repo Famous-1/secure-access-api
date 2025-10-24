@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\EstateUserController;
 use App\Http\Controllers\Api\VisitorCodeController;
 use App\Http\Controllers\Api\ComplaintController;
 use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\AnnouncementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,7 @@ Route::post('/verify-email', [AuthController::class, 'verifyEmailWithCode']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
+Route::post('set-password', [AuthController::class, 'setPassword']);
 Route::post('logout', [AuthController::class, 'logout']);
 Route::delete('delete-user', [AuthController::class, 'deleteUser']);
 
@@ -39,13 +41,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Estate Management Routes
 Route::middleware('auth:sanctum')->group(function () {
-    // User Management Routes (Admin only)
+    // Admin Routes (Admin only)
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::apiResource('users', EstateUserController::class);
-        Route::get('/visitor-codes', [VisitorCodeController::class, 'adminIndex']);
         Route::get('/complaints', [ComplaintController::class, 'adminIndex']);
         Route::get('/complaints/{id}', [ComplaintController::class, 'adminShow']);
+        Route::put('/complaints/{id}', [ComplaintController::class, 'update']);
+        Route::post('/complaints/{id}/reply', [ComplaintController::class, 'reply']);
         Route::get('/complaints/statistics', [ComplaintController::class, 'statistics']);
+        
+        // Announcement management (Admin only)
+        Route::get('/announcements', [AnnouncementController::class, 'adminIndex']);
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{id}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+    });
+
+    // Maintainer Routes (Admin and Maintainer)
+    Route::prefix('maintainer')->middleware('maintainer')->group(function () {
+        Route::get('/visitor-codes', [VisitorCodeController::class, 'adminIndex']);
         Route::get('/activities', [ActivityController::class, 'adminIndex']);
         Route::get('/activities/statistics', [ActivityController::class, 'statistics']);
     });
@@ -60,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/verify-by-code', [VisitorCodeController::class, 'verifyByCode']);
         
         // Admin/Maintainer only routes for time management
-        Route::middleware('admin')->group(function () {
+        Route::middleware('maintainer')->group(function () {
             Route::post('/{id}/time-in', [VisitorCodeController::class, 'setTimeIn']);
             Route::post('/{id}/time-out', [VisitorCodeController::class, 'setTimeOut']);
         });
@@ -81,5 +95,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/recent', [ActivityController::class, 'recent']);
         Route::get('/actions', [ActivityController::class, 'actions']);
         Route::get('/{id}', [ActivityController::class, 'show']);
+    });
+
+    // Announcement Routes (Public to all authenticated users)
+    Route::prefix('announcements')->group(function () {
+        Route::get('/', [AnnouncementController::class, 'index']);
+        Route::get('/{id}', [AnnouncementController::class, 'show']);
     });
 });

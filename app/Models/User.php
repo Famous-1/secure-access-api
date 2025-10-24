@@ -30,7 +30,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'apartment_unit',
         'full_address',
-        'status'
+        'status',
+        'password_setup_token',
+        'password_setup_token_expires_at',
+        'password_reset_token',
+        'password_reset_expires_at'
     ];
 
 
@@ -42,7 +46,9 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
-        'verification_token'
+        'verification_token',
+        'password_setup_token',
+        'password_reset_token'
     ];
 
     /**
@@ -54,6 +60,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'verification_token_expires_at' => 'datetime',
+        'password_setup_token_expires_at' => 'datetime',
+        'password_reset_expires_at' => 'datetime',
     ];
 
     // New relationships for estate management
