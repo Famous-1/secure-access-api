@@ -16,7 +16,7 @@ class ComplaintController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Complaint::where('user_id', auth()->id());
+        $query = Complaint::with(['replies.user'])->where('user_id', auth()->id());
         
         // Filter by type
         if ($request->has('type')) {
@@ -184,7 +184,7 @@ class ComplaintController extends Controller
             ], 403);
         }
 
-        $query = Complaint::with(['user', 'resolvedBy']);
+        $query = Complaint::with(['user', 'resolvedBy', 'replies.user']);
         
         // Filter by type
         if ($request->has('type')) {
