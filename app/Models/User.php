@@ -34,7 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password_setup_token',
         'password_setup_token_expires_at',
         'password_reset_token',
-        'password_reset_expires_at'
+        'password_reset_expires_at',
+        'estate_id'
     ];
 
 
@@ -63,6 +64,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'password_setup_token_expires_at' => 'datetime',
         'password_reset_expires_at' => 'datetime',
     ];
+
+    // Estate relationship
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     // New relationships for estate management
     public function visitorCodes()

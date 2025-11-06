@@ -11,6 +11,7 @@ class Activity extends Model
 
     protected $fillable = [
         'user_id',
+        'estate_id',
         'action',
         'description',
         'related_type',
@@ -21,6 +22,11 @@ class Activity extends Model
     protected $casts = [
         'metadata' => 'array',
     ];
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     public function user()
     {

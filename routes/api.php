@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\VisitorCodeController;
 use App\Http\Controllers\Api\ComplaintController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\EstateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -102,4 +103,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AnnouncementController::class, 'index']);
         Route::get('/{id}', [AnnouncementController::class, 'show']);
     });
+
+    // Estate Routes
+    Route::prefix('estate')->group(function () {
+        Route::get('/', [EstateController::class, 'show']); // Get current user's estate
+        Route::put('/', [EstateController::class, 'update']); // Update estate (Admin only)
+    });
+});
+
+// Estate creation route (for super admin scenarios - optional)
+Route::middleware('auth:sanctum')->prefix('admin')->middleware('admin')->group(function () {
+    Route::get('/estates', [EstateController::class, 'index']); // List all estates (super admin)
+    Route::post('/estates', [EstateController::class, 'store']); // Create estate
 });

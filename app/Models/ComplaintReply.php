@@ -13,8 +13,14 @@ class ComplaintReply extends Model
     protected $fillable = [
         'complaint_id',
         'user_id',
+        'estate_id',
         'message'
     ];
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     public function complaint()
     {

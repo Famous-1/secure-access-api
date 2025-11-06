@@ -14,13 +14,21 @@ use App\Notifications\SetPasswordNotification;
 class EstateUserController extends Controller
 {
     /**
+     * Get current user's estate ID
+     */
+    protected function getEstateId()
+    {
+        return auth()->user()->estate_id;
+    }
+
+    /**
      * Get all users (Admin only)
      */
     public function index(Request $request)
     {
         // Admin middleware is already applied in routes
-        
-        $query = User::query();
+        $estateId = $this->getEstateId();
+        $query = User::where('estate_id', $estateId);
         
         // Filter by user type
         if ($request->has('usertype')) {
@@ -68,6 +76,7 @@ class EstateUserController extends Controller
 
         // Generate password setup token
         $passwordSetupToken = (string) Str::uuid();
+        $estateId = $this->getEstateId();
 
         $user = User::create([
             'firstname' => $request->firstname,
@@ -78,6 +87,7 @@ class EstateUserController extends Controller
             'full_address' => $request->full_address,
             'usertype' => $request->usertype,
             'status' => $request->status,
+            'estate_id' => $estateId,
             'password' => Hash::make(Str::random(32)), // Random temporary password
             'email_verified_at' => now(), // Auto-verify admin created accounts
             'password_setup_token' => $passwordSetupToken,
@@ -90,6 +100,7 @@ class EstateUserController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'user_created',
             'description' => "Created user: {$user->firstname} {$user->lastname}",
             'related_type' => 'App\Models\User',
@@ -112,7 +123,8 @@ class EstateUserController extends Controller
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $user = User::where('estate_id', $estateId)->findOrFail($id);
         
         // Users can only view their own profile unless they're admin
         if (auth()->user()->usertype !== 'admin' && auth()->id() !== $user->id) {
@@ -133,7 +145,8 @@ class EstateUserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $user = User::where('estate_id', $estateId)->findOrFail($id);
         
         // Users can only update their own profile unless they're admin
         if (auth()->user()->usertype !== 'admin' && auth()->id() !== $user->id) {
@@ -170,6 +183,7 @@ class EstateUserController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'user_updated',
             'description' => "Updated user: {$user->firstname} {$user->lastname}",
             'related_type' => 'App\Models\User',
@@ -189,8 +203,8 @@ class EstateUserController extends Controller
     public function destroy($id)
     {
         // Admin middleware is already applied in routes
-        
-        $user = User::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $user = User::where('estate_id', $estateId)->findOrFail($id);
         
         // Prevent admin from deleting themselves
         if (auth()->id() === $user->id) {
@@ -205,6 +219,7 @@ class EstateUserController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'user_deleted',
             'description' => "Deleted user: {$user->firstname} {$user->lastname}",
             'related_type' => 'App\Models\User',

@@ -11,11 +11,21 @@ use Illuminate\Support\Facades\Validator;
 class AnnouncementController extends Controller
 {
     /**
+     * Get current user's estate ID
+     */
+    protected function getEstateId()
+    {
+        return auth()->user()->estate_id;
+    }
+
+    /**
      * Get all announcements (for all users)
      */
     public function index(Request $request)
     {
+        $estateId = $this->getEstateId();
         $query = Announcement::with('user')
+            ->where('estate_id', $estateId)
             ->active()
             ->published();
         
@@ -39,7 +49,9 @@ class AnnouncementController extends Controller
      */
     public function show($id)
     {
+        $estateId = $this->getEstateId();
         $announcement = Announcement::with('user')
+            ->where('estate_id', $estateId)
             ->active()
             ->published()
             ->findOrFail($id);
@@ -62,7 +74,9 @@ class AnnouncementController extends Controller
             ], 403);
         }
 
-        $query = Announcement::with('user');
+        $estateId = $this->getEstateId();
+        $query = Announcement::with('user')
+            ->where('estate_id', $estateId);
         
         // Filter by status
         if ($request->has('is_active')) {
@@ -111,8 +125,10 @@ class AnnouncementController extends Controller
             ], 422);
         }
 
+        $estateId = $this->getEstateId();
         $announcement = Announcement::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'title' => $request->title,
             'content' => $request->content,
             'priority' => $request->priority,
@@ -124,6 +140,7 @@ class AnnouncementController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'announcement_created',
             'description' => "Created announcement: {$request->title}",
             'related_type' => 'App\Models\Announcement',
@@ -170,7 +187,8 @@ class AnnouncementController extends Controller
             ], 422);
         }
 
-        $announcement = Announcement::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $announcement = Announcement::where('estate_id', $estateId)->findOrFail($id);
         
         $announcement->update($request->only([
             'title', 'content', 'priority', 'published_at', 'expires_at', 'is_active'
@@ -179,6 +197,7 @@ class AnnouncementController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'announcement_updated',
             'description' => "Updated announcement: {$announcement->title}",
             'related_type' => 'App\Models\Announcement',
@@ -204,11 +223,13 @@ class AnnouncementController extends Controller
             ], 403);
         }
 
-        $announcement = Announcement::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $announcement = Announcement::where('estate_id', $estateId)->findOrFail($id);
         
         // Log activity before deleting
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'announcement_deleted',
             'description' => "Deleted announcement: {$announcement->title}",
             'related_type' => 'App\Models\Announcement',

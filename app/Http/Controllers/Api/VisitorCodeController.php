@@ -12,11 +12,21 @@ use Illuminate\Support\Str;
 class VisitorCodeController extends Controller
 {
     /**
+     * Get current user's estate ID
+     */
+    protected function getEstateId()
+    {
+        return auth()->user()->estate_id;
+    }
+
+    /**
      * Get visitor codes for the authenticated user
      */
     public function index(Request $request)
     {
-        $query = VisitorCode::where('user_id', auth()->id());
+        $estateId = $this->getEstateId();
+        $query = VisitorCode::where('estate_id', $estateId)
+            ->where('user_id', auth()->id());
         
         // Filter by status
         if ($request->has('status')) {
@@ -53,13 +63,16 @@ class VisitorCodeController extends Controller
             ], 422);
         }
 
-        // Generate unique code
+        $estateId = $this->getEstateId();
+        
+        // Generate unique code within estate
         do {
             $code = strtoupper(Str::random(6));
-        } while (VisitorCode::where('code', $code)->exists());
+        } while (VisitorCode::where('code', $code)->where('estate_id', $estateId)->exists());
 
         $visitorCode = VisitorCode::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'visitor_name' => $request->visitor_name,
             'phone_number' => $request->phone_number,
             'destination' => $request->destination,
@@ -73,6 +86,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_created',
             'description' => "Generated visitor code for {$request->visitor_name}",
             'related_type' => 'App\Models\VisitorCode',
@@ -96,7 +110,10 @@ class VisitorCodeController extends Controller
      */
     public function show($id)
     {
-        $visitorCode = VisitorCode::where('user_id', auth()->id())->findOrFail($id);
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('estate_id', $estateId)
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
         
         return response()->json([
             'success' => true,
@@ -117,7 +134,8 @@ class VisitorCodeController extends Controller
             ], 403);
         }
 
-        $visitorCode = VisitorCode::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('estate_id', $estateId)->findOrFail($id);
         
         if ($visitorCode->isExpired()) {
             return response()->json([
@@ -143,6 +161,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_verified',
             'description' => "Verified visitor code for {$visitorCode->visitor_name} (Time In)",
             'related_type' => 'App\Models\VisitorCode',
@@ -166,7 +185,10 @@ class VisitorCodeController extends Controller
      */
     public function cancel($id)
     {
-        $visitorCode = VisitorCode::where('user_id', auth()->id())->findOrFail($id);
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('estate_id', $estateId)
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
         
         if ($visitorCode->isVerified()) {
             return response()->json([
@@ -180,6 +202,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_cancelled',
             'description' => "Cancelled visitor code for {$visitorCode->visitor_name}",
             'related_type' => 'App\Models\VisitorCode',
@@ -204,7 +227,9 @@ class VisitorCodeController extends Controller
             ], 403);
         }
 
-        $query = VisitorCode::with(['user', 'verifiedBy']);
+        $estateId = $this->getEstateId();
+        $query = VisitorCode::with(['user', 'verifiedBy'])
+            ->where('estate_id', $estateId);
         
         // Filter by status
         if ($request->has('status')) {
@@ -252,7 +277,10 @@ class VisitorCodeController extends Controller
             ], 422);
         }
 
-        $visitorCode = VisitorCode::where('code', strtoupper($request->code))->first();
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('code', strtoupper($request->code))
+            ->where('estate_id', $estateId)
+            ->first();
         
         if (!$visitorCode) {
             return response()->json([
@@ -291,6 +319,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_verified_by_code',
             'description' => "Verified visitor code: {$visitorCode->code} for {$visitorCode->visitor_name} (Time In)",
             'related_type' => 'App\Models\VisitorCode',
@@ -321,7 +350,8 @@ class VisitorCodeController extends Controller
             ], 403);
         }
 
-        $visitorCode = VisitorCode::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('estate_id', $estateId)->findOrFail($id);
         
         if ($visitorCode->status !== 'active') {
             return response()->json([
@@ -338,6 +368,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_time_out',
             'description' => "Set time out for visitor code: {$visitorCode->code} for {$visitorCode->visitor_name}",
             'related_type' => 'App\Models\VisitorCode',
@@ -369,7 +400,8 @@ class VisitorCodeController extends Controller
             ], 403);
         }
 
-        $visitorCode = VisitorCode::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $visitorCode = VisitorCode::where('estate_id', $estateId)->findOrFail($id);
         
         if ($visitorCode->status !== 'pending') {
             return response()->json([
@@ -386,6 +418,7 @@ class VisitorCodeController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'visitor_code_time_in',
             'description' => "Set time in for visitor code: {$visitorCode->code} for {$visitorCode->visitor_name}",
             'related_type' => 'App\Models\VisitorCode',

@@ -12,6 +12,7 @@ class Complaint extends Model
 
     protected $fillable = [
         'user_id',
+        'estate_id',
         'type',
         'category',
         'severity',
@@ -26,6 +27,11 @@ class Complaint extends Model
     protected $casts = [
         'resolved_at' => 'datetime',
     ];
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     public function user()
     {

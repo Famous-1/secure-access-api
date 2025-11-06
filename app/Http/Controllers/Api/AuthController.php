@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\Estate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -21,26 +22,66 @@ class AuthController extends Controller
     // Register new user
     public function register(Request $request)
 {
-    // Validation rules
-    $validator = Validator::make($request->all(), [
+    // Validation rules - estate handling
+    $rules = [
         'firstname' => 'required|string|max:255',
         'lastname' => 'required|string|max:255',
         'phone' => 'required|string|max:15',
         'email' => 'required|string|email|max:255|unique:users',
         'password' => 'required|string|min:6|confirmed',
         'avatar' => 'nullable|image|max:2048',
-        'usertype' => 'required|string|in:user,vendor,admin,installer', // Ensures usertype is valid
+        'usertype' => 'required|string|in:user,vendor,admin,installer,resident,maintainer',
         'address' => 'nullable|string|max:255',
         'company_name' => 'nullable|string|max:255',
-    ]);
+    ];
+
+    // If admin, require estate creation data OR estate_id
+    if ($request->usertype === 'admin') {
+        $rules['estate'] = 'required_without:estate_id|array';
+        $rules['estate.name'] = 'required_with:estate|string|max:255';
+        $rules['estate.code'] = 'nullable|string|max:50|unique:estates,code';
+        $rules['estate.address'] = 'nullable|string';
+        $rules['estate_id'] = 'required_without:estate|exists:estates,id';
+    } else {
+        // For non-admin users, require estate_id
+        $rules['estate_id'] = 'required|exists:estates,id';
+    }
+
+    $validator = Validator::make($request->all(), $rules);
 
     if ($validator->fails()) {
-        return response()->json($validator->errors(), 400);
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Handle estate creation for admin
+    $estateId = null;
+    if ($request->usertype === 'admin' && $request->has('estate')) {
+        $estateData = $request->estate;
+        $code = $estateData['code'] ?? Str::slug($estateData['name']) . '-' . Str::random(6);
+        
+        $estate = Estate::create([
+            'name' => $estateData['name'],
+            'code' => $code,
+            'address' => $estateData['address'] ?? null,
+            'phone' => $estateData['phone'] ?? null,
+            'email' => $estateData['email'] ?? null,
+            'description' => $estateData['description'] ?? null,
+            'is_active' => true
+        ]);
+        
+        $estateId = $estate->id;
+    } elseif ($request->has('estate_id')) {
+        $estateId = $request->estate_id;
     }
 
     // Prepare user data
     $data = $request->only(['firstname', 'lastname', 'phone', 'email', 'usertype', 'address', 'company_name']);
-    $data['password'] = Hash::make($request->password); // Hash password before saving
+    $data['password'] = Hash::make($request->password);
+    $data['estate_id'] = $estateId;
 
     // Save avatar if uploaded
     if ($request->hasFile('avatar')) {
@@ -48,7 +89,7 @@ class AuthController extends Controller
     }
 
     // Generate a verification token
-    $verificationToken = random_int(100000, 999999); // Generates a 6-digit number
+    $verificationToken = random_int(100000, 999999);
     $data['verification_token'] = $verificationToken;
     $data['verification_token_expires_at'] = now()->addMinutes(10);
 
@@ -67,10 +108,10 @@ class AuthController extends Controller
     // Send verification email
     $user->notify(new VerifyEmailNotification($user, $verificationToken));
 
-
     return response()->json([
+        'success' => true,
         'message' => 'User registered successfully. Please check your email to verify your account.',
-        'user' => $user,
+        'data' => $user->load('estate'),
     ], 201);
 }
 

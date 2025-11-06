@@ -12,11 +12,22 @@ use Illuminate\Support\Facades\Validator;
 class ComplaintController extends Controller
 {
     /**
+     * Get current user's estate ID
+     */
+    protected function getEstateId()
+    {
+        return auth()->user()->estate_id;
+    }
+
+    /**
      * Get complaints for the authenticated user
      */
     public function index(Request $request)
     {
-        $query = Complaint::with(['replies.user'])->where('user_id', auth()->id());
+        $estateId = $this->getEstateId();
+        $query = Complaint::with(['replies.user'])
+            ->where('estate_id', $estateId)
+            ->where('user_id', auth()->id());
         
         // Filter by type
         if ($request->has('type')) {
@@ -67,8 +78,10 @@ class ComplaintController extends Controller
             ], 422);
         }
 
+        $estateId = $this->getEstateId();
         $complaint = Complaint::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'type' => $request->type,
             'category' => $request->category,
             'severity' => $request->severity,
@@ -80,6 +93,7 @@ class ComplaintController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'complaint_created',
             'description' => "Submitted {$request->type}: {$request->title}",
             'related_type' => 'App\Models\Complaint',
@@ -104,7 +118,9 @@ class ComplaintController extends Controller
      */
     public function show($id)
     {
+        $estateId = $this->getEstateId();
         $complaint = Complaint::with(['replies.user'])
+            ->where('estate_id', $estateId)
             ->where('user_id', auth()->id())
             ->findOrFail($id);
         
@@ -140,7 +156,8 @@ class ComplaintController extends Controller
             ], 422);
         }
 
-        $complaint = Complaint::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $complaint = Complaint::where('estate_id', $estateId)->findOrFail($id);
         
         $updateData = $request->only(['status', 'admin_notes']);
         
@@ -155,6 +172,7 @@ class ComplaintController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'complaint_updated',
             'description' => "Updated complaint: {$complaint->title}",
             'related_type' => 'App\Models\Complaint',
@@ -184,7 +202,9 @@ class ComplaintController extends Controller
             ], 403);
         }
 
-        $query = Complaint::with(['user', 'resolvedBy', 'replies.user']);
+        $estateId = $this->getEstateId();
+        $query = Complaint::with(['user', 'resolvedBy', 'replies.user'])
+            ->where('estate_id', $estateId);
         
         // Filter by type
         if ($request->has('type')) {
@@ -235,22 +255,23 @@ class ComplaintController extends Controller
             ], 403);
         }
 
+        $estateId = $this->getEstateId();
         $stats = [
-            'total' => Complaint::count(),
-            'pending' => Complaint::where('status', 'pending')->count(),
-            'acknowledged' => Complaint::where('status', 'acknowledged')->count(),
-            'in_progress' => Complaint::where('status', 'in_progress')->count(),
-            'resolved' => Complaint::where('status', 'resolved')->count(),
-            'closed' => Complaint::where('status', 'closed')->count(),
+            'total' => Complaint::where('estate_id', $estateId)->count(),
+            'pending' => Complaint::where('estate_id', $estateId)->where('status', 'pending')->count(),
+            'acknowledged' => Complaint::where('estate_id', $estateId)->where('status', 'acknowledged')->count(),
+            'in_progress' => Complaint::where('estate_id', $estateId)->where('status', 'in_progress')->count(),
+            'resolved' => Complaint::where('estate_id', $estateId)->where('status', 'resolved')->count(),
+            'closed' => Complaint::where('estate_id', $estateId)->where('status', 'closed')->count(),
             'by_type' => [
-                'complaints' => Complaint::where('type', 'complaint')->count(),
-                'suggestions' => Complaint::where('type', 'suggestion')->count()
+                'complaints' => Complaint::where('estate_id', $estateId)->where('type', 'complaint')->count(),
+                'suggestions' => Complaint::where('estate_id', $estateId)->where('type', 'suggestion')->count()
             ],
             'by_severity' => [
-                'low' => Complaint::where('severity', 'low')->count(),
-                'medium' => Complaint::where('severity', 'medium')->count(),
-                'high' => Complaint::where('severity', 'high')->count(),
-                'critical' => Complaint::where('severity', 'critical')->count()
+                'low' => Complaint::where('estate_id', $estateId)->where('severity', 'low')->count(),
+                'medium' => Complaint::where('estate_id', $estateId)->where('severity', 'medium')->count(),
+                'high' => Complaint::where('estate_id', $estateId)->where('severity', 'high')->count(),
+                'critical' => Complaint::where('estate_id', $estateId)->where('severity', 'critical')->count()
             ]
         ];
 
@@ -299,7 +320,10 @@ class ComplaintController extends Controller
             ], 403);
         }
 
-        $complaint = Complaint::with(['user', 'resolvedBy', 'replies.user'])->findOrFail($id);
+        $estateId = $this->getEstateId();
+        $complaint = Complaint::with(['user', 'resolvedBy', 'replies.user'])
+            ->where('estate_id', $estateId)
+            ->findOrFail($id);
         
         return response()->json([
             'success' => true,
@@ -331,11 +355,13 @@ class ComplaintController extends Controller
             ], 422);
         }
 
-        $complaint = Complaint::findOrFail($id);
+        $estateId = $this->getEstateId();
+        $complaint = Complaint::where('estate_id', $estateId)->findOrFail($id);
 
         $reply = ComplaintReply::create([
             'complaint_id' => $complaint->id,
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'message' => $request->message
         ]);
 
@@ -347,6 +373,7 @@ class ComplaintController extends Controller
         // Log activity
         Activity::create([
             'user_id' => auth()->id(),
+            'estate_id' => $estateId,
             'action' => 'complaint_replied',
             'description' => "Replied to complaint: {$complaint->title}",
             'related_type' => 'App\Models\Complaint',

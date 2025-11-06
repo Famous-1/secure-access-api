@@ -12,6 +12,7 @@ class Announcement extends Model
 
     protected $fillable = [
         'user_id',
+        'estate_id',
         'title',
         'content',
         'priority',
@@ -25,6 +26,11 @@ class Announcement extends Model
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     public function user()
     {

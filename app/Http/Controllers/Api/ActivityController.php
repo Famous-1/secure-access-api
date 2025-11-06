@@ -9,11 +9,21 @@ use Illuminate\Http\Request;
 class ActivityController extends Controller
 {
     /**
+     * Get current user's estate ID
+     */
+    protected function getEstateId()
+    {
+        return auth()->user()->estate_id;
+    }
+
+    /**
      * Get activities for the authenticated user
      */
     public function index(Request $request)
     {
-        $query = Activity::where('user_id', auth()->id());
+        $estateId = $this->getEstateId();
+        $query = Activity::where('estate_id', $estateId)
+            ->where('user_id', auth()->id());
         
         // Filter by action
         if ($request->has('action')) {
@@ -54,7 +64,9 @@ class ActivityController extends Controller
             ], 403);
         }
 
-        $query = Activity::with('user');
+        $estateId = $this->getEstateId();
+        $query = Activity::with('user')
+            ->where('estate_id', $estateId);
         
         // Filter by user
         if ($request->has('user_id')) {
@@ -96,7 +108,9 @@ class ActivityController extends Controller
         $days = $request->get('days', 7);
         $limit = $request->get('limit', 10);
         
-        $query = Activity::recent($days);
+        $estateId = $this->getEstateId();
+        $query = Activity::recent($days)
+            ->where('estate_id', $estateId);
         
         // If user is not admin or maintainer, only show their activities
         if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
@@ -133,20 +147,24 @@ class ActivityController extends Controller
 
         $days = $request->get('days', 30);
         
+        $estateId = $this->getEstateId();
         $stats = [
-            'total_activities' => Activity::count(),
-            'recent_activities' => Activity::recent($days)->count(),
-            'by_action' => Activity::selectRaw('action, COUNT(*) as count')
+            'total_activities' => Activity::where('estate_id', $estateId)->count(),
+            'recent_activities' => Activity::where('estate_id', $estateId)->recent($days)->count(),
+            'by_action' => Activity::where('estate_id', $estateId)
+                ->selectRaw('action, COUNT(*) as count')
                 ->groupBy('action')
                 ->orderBy('count', 'desc')
                 ->get(),
             'by_user' => Activity::with('user')
+                ->where('estate_id', $estateId)
                 ->selectRaw('user_id, COUNT(*) as count')
                 ->groupBy('user_id')
                 ->orderBy('count', 'desc')
                 ->limit(10)
                 ->get(),
-            'daily_activities' => Activity::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            'daily_activities' => Activity::where('estate_id', $estateId)
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
                 ->where('created_at', '>=', now()->subDays($days))
                 ->groupBy('date')
                 ->orderBy('date', 'desc')
@@ -164,7 +182,10 @@ class ActivityController extends Controller
      */
     public function show($id)
     {
-        $activity = Activity::with('user')->findOrFail($id);
+        $estateId = $this->getEstateId();
+        $activity = Activity::with('user')
+            ->where('estate_id', $estateId)
+            ->findOrFail($id);
         
         // Users can only view their own activities unless they're admin or maintainer
         if (!in_array(auth()->user()->usertype, ['admin', 'maintainer']) && $activity->user_id !== auth()->id()) {

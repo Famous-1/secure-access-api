@@ -12,6 +12,7 @@ class VisitorCode extends Model
 
     protected $fillable = [
         'user_id',
+        'estate_id',
         'visitor_name',
         'phone_number',
         'destination',
@@ -32,6 +33,11 @@ class VisitorCode extends Model
         'time_in' => 'datetime',
         'time_out' => 'datetime',
     ];
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
+    }
 
     public function user()
     {
