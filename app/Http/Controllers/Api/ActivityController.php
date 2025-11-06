@@ -43,11 +43,11 @@ class ActivityController extends Controller
     }
 
     /**
-     * Get all activities (Admin only)
+     * Get all activities (Admin and Maintainer only)
      */
     public function adminIndex(Request $request)
     {
-        if (auth()->user()->usertype !== 'admin') {
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -98,11 +98,11 @@ class ActivityController extends Controller
         
         $query = Activity::recent($days);
         
-        // If user is not admin, only show their activities
-        if (auth()->user()->usertype !== 'admin') {
+        // If user is not admin or maintainer, only show their activities
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
             $query->where('user_id', auth()->id());
         } else {
-            // Admin can see all activities or filter by user
+            // Admin and Maintainer can see all activities or filter by user
             if ($request->has('user_id')) {
                 $query->where('user_id', $request->user_id);
             }
@@ -120,11 +120,11 @@ class ActivityController extends Controller
     }
 
     /**
-     * Get activity statistics (Admin only)
+     * Get activity statistics (Admin and Maintainer only)
      */
     public function statistics(Request $request)
     {
-        if (auth()->user()->usertype !== 'admin') {
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -166,8 +166,8 @@ class ActivityController extends Controller
     {
         $activity = Activity::with('user')->findOrFail($id);
         
-        // Users can only view their own activities unless they're admin
-        if (auth()->user()->usertype !== 'admin' && $activity->user_id !== auth()->id()) {
+        // Users can only view their own activities unless they're admin or maintainer
+        if (!in_array(auth()->user()->usertype, ['admin', 'maintainer']) && $activity->user_id !== auth()->id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
