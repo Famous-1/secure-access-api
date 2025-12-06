@@ -93,7 +93,7 @@
                                 <p>Dear <span class="bold-text">{{ $user->firstname }},</span></p>
                                 <p>kindly click on the link below to reset your password <br> <br>
                                  <span style="font-weight: bold; font-size: 16px;">
-                                    <a href="{{ env('FRONTEND_URL') . '/reset-password/' . $token }}" target="_blank">Click here to reset your password</a>
+                                    <a href="{{ env('FRONTEND_URL') . '/reset-password/' . $token . '?email=' . urlencode($user->email) }}" target="_blank">Click here to reset your password</a>
                                 </span>
                                 </p>
                                 <p>If you did not register for an account, no further action is required.</p>
