@@ -40,13 +40,10 @@ class SetPasswordNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Set Your Password - Secure Access')
-            ->greeting('Hello ' . $this->user->firstname . '!')
-            ->line('Your account has been created by the administrator.')
-            ->line('Please use the following code to set your password:')
-            ->line('**' . $this->token . '**')
-            ->line('This code will expire in 24 hours.')
-            ->line('If you did not expect this email, please contact support.')
-            ->salutation('Best regards, Secure Access Team');
+            ->view('emails.set-password', [
+                'user' => $this->user,
+                'token' => $this->token
+            ]);
     }
 
     /**
