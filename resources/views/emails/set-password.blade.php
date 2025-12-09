@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Set Your Password - GreenQuote</title>
+    <title>Set Your Password - GetThrough</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
         
@@ -31,10 +31,13 @@
             font-weight: 600;
             font-size: 24px;
             line-height: 24px;
-            color: #004596;
+            color: #007a55;
             margin: 0;
             padding: 0;
         }
+      a {
+        color: #007a55; !important
+      }
         
         .body-content {
             font-size: 16px;
@@ -66,10 +69,10 @@
                                 <table cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td>
-                                            <img src="https://admin.greenquote.ng/images/email-temp-logo.png" alt="logo" width="80" height="80" style="display: block;">
+                                            <img src="https://res.cloudinary.com/dzzditnfw/image/upload/v1765297125/logo_ugr40t.svg" alt="logo" width="80" height="80" style="display: block;">
                                         </td>
                                         <td style="padding-left: 14px;">
-                                            <p class="logo-text">Green <br/>Quote</p>
+                                            <p class="logo-text">GetThrough</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -94,12 +97,12 @@
                                 <p>Your account has been created by the administrator. Please click on the link below to set your password.</p>
                                 <p style="margin: 20px 0;">
                                  <span style="font-weight: bold; font-size: 16px;">
-                                    <a href="{{ env('FRONTEND_URL') . '/set-password/' . $token . '?email=' . urlencode($user->email) }}" target="_blank" style="color: #004596; text-decoration: none; background-color: #f0f0f0; padding: 12px 24px; border-radius: 4px; display: inline-block;">Click here to set your password</a>
+                                    <a href="{{ env('FRONTEND_URL') . '/set-password/' . $token . '?email=' . urlencode($user->email) }}" target="_blank" style="color: #007a55; text-decoration: none; background-color: #f0f0f0; padding: 12px 24px; border-radius: 4px; display: inline-block;">Click here to set your password</a>
                                 </span>
                                 </p>
                                 <p>This link will expire in 24 hours.</p>
                                 <p>If you did not expect this email, please contact support.</p>
-                                <p>Best regards,<br>The GreenQuote Team</p>
+                                <p>Best regards,<br>The GetThrough Team</p>
                             </td>
                         </tr>
                     </table>
@@ -112,11 +115,11 @@
                     <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                             <td class="footer">
-                                <p style="margin: 0;">Green Quote</p>
-                                <p style="margin: 5px 0;">KM 18, Lekki Epe Expressway, Agungi bus stop, Lekki, Lagos</p>
-                                <p style="margin: 5px 0;">Phone: +234 803 707 9950</p>
-                                <p style="margin: 5px 0;">Email: hello@greenquote.ng</p>
-                                <p style="margin: 5px 0;">Website: www.greenquote.ng</p>
+                                <p style="margin: 0;">GetThrough</p>
+                                
+                                <p style="margin: 5px 0;">Phone: +234 803 723 9519</p>
+                                <p style="margin: 5px 0;">Email: hello@getthrough.com</p>
+                                <p style="margin: 5px 0;">Website: www.getthrough.com</p>
                             </td>
                         </tr>
                     </table>
